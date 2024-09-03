@@ -64,19 +64,27 @@ DecisionNode.propTypes = {
   onSelect: PropTypes.func.isRequired
 }
 
-function ChanceNode({ id, onSelect }) {
+function ChanceNode({ id, onSelect, expectedValue, onUpdate }) {
+  const [decision, setDecision] = useState('')
+
+  useEffect(() => {
+    onUpdate(id, { decision })
+  }, [decision])
+
   return (
     <div className="child-node chance-node flex items-center relative" onClick={() => onSelect(id)}>
       <div className="h-20 w-20 border-4 border-gray-700 items-center text-center content-center rounded-full relative">
         {id}
         <div className={'absolute top-[-3rem] w-full flex justify-center'}>
-          <div className={'text-center p-2 bg-blue-200 rounded'}>{'expectedValue'}</div>
+          <div className={'text-center p-2 bg-blue-200 rounded'}>{expectedValue}</div>
         </div>
       </div>
       <input
         type="text"
         className={'absolute left-2 top-0 w-28 border border-black rounded p-1 text-center'}
         placeholder="Decision"
+        value={decision}
+        onChange={(e) => setDecision(e.target.value)}
       />
     </div>
   )
@@ -84,7 +92,15 @@ function ChanceNode({ id, onSelect }) {
 
 ChanceNode.propTypes = {
   id: PropTypes.string.isRequired,
-  onSelect: PropTypes.func.isRequired
+  onSelect: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  expectedValue: PropTypes.number.isRequired
+}
+
+ChanceNode.propTypes = {
+  id: PropTypes.string.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired
 }
 
 function EndNode({ id, onSelect, onUpdate }) {
@@ -139,10 +155,10 @@ EndNode.propTypes = {
   onUpdate: PropTypes.func.isRequired
 }
 
-function NodeIdentifier({ level, id, Node, children, onSelect, onUpdate }) {
+function NodeIdentifier({ level, id, Node, children, onSelect, onUpdate, expectedValue }) {
   return (
     <div id={id} className={`level-${level} flex items-center relative py-1`}>
-      <Node id={id} onSelect={onSelect} onUpdate={onUpdate} />
+      <Node id={id} onSelect={onSelect} onUpdate={onUpdate} expectedValue={expectedValue} />
       {children && <NodeContainer level={level + 1}>{children}</NodeContainer>}
     </div>
   )
@@ -154,7 +170,8 @@ NodeIdentifier.propTypes = {
   Node: PropTypes.elementType.isRequired,
   children: PropTypes.node,
   onSelect: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired
+  onUpdate: PropTypes.func.isRequired,
+  expectedValue: PropTypes.number.isRequired
 }
 
 function App() {
@@ -287,6 +304,7 @@ function App() {
         Node={node.type}
         onSelect={handleNodeSelect}
         onUpdate={handleNodeUpdate}
+        expectedValue={getExpectedValue(node)}
       >
         {node.children.length > 0 && renderNodes(node.children)}
       </NodeIdentifier>
@@ -299,7 +317,6 @@ function App() {
     }
 
     return node.children.reduce((acc, child) => {
-      console.log(child)
       const value = child.value || 0
       const chance = (child.chance || 0) * 0.01
       return acc + value * chance
