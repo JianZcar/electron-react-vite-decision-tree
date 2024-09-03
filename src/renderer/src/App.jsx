@@ -67,8 +67,11 @@ DecisionNode.propTypes = {
 function ChanceNode({ id, onSelect }) {
   return (
     <div className="child-node chance-node flex items-center relative" onClick={() => onSelect(id)}>
-      <div className="h-20 w-20 border-4 border-gray-700 items-center text-center content-center rounded-full">
+      <div className="h-20 w-20 border-4 border-gray-700 items-center text-center content-center rounded-full relative">
         {id}
+        <div className={'absolute top-[-3rem] w-full flex justify-center'}>
+          <div className={'text-center p-2 bg-blue-200 rounded'}>{'expectedValue'}</div>
+        </div>
       </div>
       <input
         type="text"
