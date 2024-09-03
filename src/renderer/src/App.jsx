@@ -49,6 +49,7 @@ function DecisionNode({ id, onSelect }) {
       <div className="h-20 w-20 border-4 border-gray-700 items-center text-center content-center rounded-xl">
         {id}
       </div>
+      <div></div>
       <input
         type="text"
         className={'absolute left-2 top-0 w-28 border border-black rounded p-1 text-center'}
@@ -83,10 +84,14 @@ ChanceNode.propTypes = {
   onSelect: PropTypes.func.isRequired
 }
 
-function EndNode({ id, onSelect }) {
+function EndNode({ id, onSelect, onUpdate }) {
   const [outcome, setOutcome] = useState('')
-  const [chance, setChance] = useState('')
-  const [value, setValue] = useState('')
+  const [chance, setChance] = useState(0.0)
+  const [value, setValue] = useState(0.0)
+
+  useEffect(() => {
+    onUpdate(id, { chance, value })
+  }, [chance, value])
 
   return (
     <div className="child-node end-node flex items-center relative" onClick={() => onSelect(id)}>
@@ -108,18 +113,18 @@ function EndNode({ id, onSelect }) {
         onChange={(e) => setOutcome(e.target.value)}
       />
       <input
-        type="text"
+        type="number"
         className={'absolute w-28 border border-black rounded p-1 text-center left-2 bottom-0'}
         placeholder="Chance"
         value={chance}
-        onChange={(e) => setChance(e.target.value)}
+        onChange={(e) => setChance(parseFloat(e.target.value))}
       />
       <input
-        type="text"
+        type="number"
         className={'absolute w-28 border border-black rounded p-1 text-center right-[-70%]'}
         placeholder="Value"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => setValue(parseFloat(e.target.value))}
       />
     </div>
   )
@@ -127,13 +132,14 @@ function EndNode({ id, onSelect }) {
 
 EndNode.propTypes = {
   id: PropTypes.string.isRequired,
-  onSelect: PropTypes.func.isRequired
+  onSelect: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired
 }
 
-function NodeIdentifier({ level, id, Node, children, onSelect }) {
+function NodeIdentifier({ level, id, Node, children, onSelect, onUpdate }) {
   return (
     <div id={id} className={`level-${level} flex items-center relative py-1`}>
-      <Node id={id} onSelect={onSelect} />
+      <Node id={id} onSelect={onSelect} onUpdate={onUpdate} />
       {children && <NodeContainer level={level + 1}>{children}</NodeContainer>}
     </div>
   )
@@ -144,7 +150,8 @@ NodeIdentifier.propTypes = {
   id: PropTypes.string.isRequired,
   Node: PropTypes.elementType.isRequired,
   children: PropTypes.node,
-  onSelect: PropTypes.func.isRequired
+  onSelect: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired
 }
 
 function App() {
@@ -152,15 +159,38 @@ function App() {
   const [selectedNodeType, setSelectedNodeType] = useState('DecisionNode')
   const [nodes, setNodes] = useState([])
 
+  function generateRandomString(length) {
+    const characters = '1234567890'
+    let result = ''
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length))
+    }
+    return result
+  }
+
   const handleNodeSelect = (id) => {
     setSelectedNodeId(id)
+  }
+
+  const handleNodeUpdate = (id, updates) => {
+    const updateNodeRecursively = (nodes) => {
+      return nodes.map((node) => {
+        if (node.id === id) {
+          return { ...node, ...updates }
+        } else if (node.children.length > 0) {
+          return { ...node, children: updateNodeRecursively(node.children) }
+        }
+        return node
+      })
+    }
+    setNodes(updateNodeRecursively(nodes))
   }
   const addNode = () => {
     if (selectedNodeId === 'root') {
       setNodes([
         ...nodes,
         {
-          id: `root${nodes.length + 1}`,
+          id: `ID${generateRandomString(4)}`,
           level: 1,
           type: getNodeType(selectedNodeType),
           children: []
@@ -177,11 +207,12 @@ function App() {
             children: [
               ...node.children,
               {
-                id: `${node.id}${node.children.length + 1}`,
+                id: `ID${generateRandomString(4)}`,
                 level: node.level + 1,
                 type: getNodeType(selectedNodeType),
                 children: [],
-                chance: 0 // Ensure chance property is initialized
+                chance: 0,
+                value: 0
               }
             ]
           }
@@ -194,7 +225,6 @@ function App() {
         return node
       })
     }
-
     setNodes(addNodeRecursively(nodes))
   }
 
@@ -243,6 +273,8 @@ function App() {
     return flatList
   }
 
+  const allNodes = flattenNodes(nodes)
+
   const renderNodes = (nodes) => {
     return nodes.map((node) => (
       <NodeIdentifier
@@ -251,29 +283,33 @@ function App() {
         id={node.id}
         Node={node.type}
         onSelect={handleNodeSelect}
+        onUpdate={handleNodeUpdate}
       >
         {node.children.length > 0 && renderNodes(node.children)}
       </NodeIdentifier>
     ))
   }
 
-  const allNodes = flattenNodes(nodes)
-
   const getExpectedValue = (node) => {
-    if (!node || !node.children || node.children.length === 0 || node.type !== 'ChanceNode') {
+    if (node.type !== getNodeType('ChanceNode')) {
       return 0
     }
 
     return node.children.reduce((acc, child) => {
-      if (child.type === 'EndNode') {
-        const value = child.value || 0
-        const chance = (child.chance || 0) * 0.01
-        return acc + value * chance
-      }
-      return acc
+      console.log(child)
+      const value = child.value || 0
+      const chance = (child.chance || 0) * 0.01
+      return acc + value * chance
     }, 0)
   }
 
+  const logChanceNodes = () => {
+    const chanceNodes = allNodes.filter((node) => node.type === getNodeType('ChanceNode'))
+    chanceNodes.forEach((node) => {
+      const expectedValue = getExpectedValue(node)
+      console.log(`ID: ${node.id}, Expected Value: ${expectedValue}`)
+    })
+  }
   const [isOpen, setIsOpen] = useState(true)
 
   return (
@@ -332,6 +368,11 @@ function App() {
         {isOpen && (
           <button onClick={removeNode} className="p-2 bg-red-500 text-white rounded">
             Remove Node
+          </button>
+        )}
+        {isOpen && (
+          <button onClick={logChanceNodes} className="p-2 bg-green-500 text-white rounded">
+            Log Chance Nodes
           </button>
         )}
       </div>
