@@ -122,7 +122,7 @@ EndNode.propTypes = {
 
 function NodeIdentifier({ level, id, Node, children, onSelect }) {
   return (
-    <div id={id} className={`level-${level} flex items-center relative py-6`}>
+    <div id={id} className={`level-${level} flex items-center relative py-1`}>
       <Node id={id} onSelect={onSelect} />
       {children && <NodeContainer level={level + 1}>{children}</NodeContainer>}
     </div>
@@ -249,8 +249,10 @@ function App() {
 
   const allNodes = flattenNodes(nodes)
 
+  const [isOpen, setIsOpen] = useState(true)
+
   return (
-    <div className={'flex justify-center items-center flex-grow relative'}>
+    <div className={'flex justify-center items-center flex-grow relative p-24'}>
       <div className={'root-node flex items-center'} onClick={() => handleNodeSelect('root')}>
         <div
           className={
@@ -261,29 +263,52 @@ function App() {
         </div>
       </div>
       <NodeContainer level={1}>{renderNodes(nodes)}</NodeContainer>
-      <div className={'fixed bottom-10 right-40 flex p-6'}>
-        <select onChange={(e) => setSelectedNodeId(e.target.value)} value={selectedNodeId || ''}>
-          <option value="" disabled>
-            Select Node ID
-          </option>
-          <option value="root">Root Node</option>
-          {allNodes.map((node) => (
-            <option key={node.id} value={node.id}>
-              {node.id}
+      <div
+        className={
+          'fixed bottom-10 right-40 grid grid-flow-row gap-5 p-6 bg-slate-100 rounded border-2'
+        }
+      >
+        <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-gray-500 text-white rounded">
+          {isOpen ? 'Close' : 'Open'} Controls
+        </button>
+        {isOpen && (
+          <select
+            className={'border-2 rounded'}
+            onChange={(e) => setSelectedNodeId(e.target.value)}
+            value={selectedNodeId || ''}
+          >
+            <option value="" disabled>
+              Select Node ID
             </option>
-          ))}
-        </select>
-        <select onChange={(e) => setSelectedNodeType(e.target.value)} value={selectedNodeType}>
-          <option value="DecisionNode">Decision Node</option>
-          <option value="ChanceNode">Chance Node</option>
-          <option value="EndNode">End Node</option>
-        </select>
-        <button onClick={addNode} className="p-2 bg-blue-500 text-white rounded">
-          Add Node
-        </button>
-        <button onClick={removeNode} className="p-2 bg-red-500 text-white rounded">
-          Remove Node
-        </button>
+            <option value="root">Root Node</option>
+            {allNodes.map((node) => (
+              <option key={node.id} value={node.id}>
+                {node.id}
+              </option>
+            ))}
+          </select>
+        )}
+        {isOpen && (
+          <select
+            className={'border-2 rounded'}
+            onChange={(e) => setSelectedNodeType(e.target.value)}
+            value={selectedNodeType}
+          >
+            <option value="DecisionNode">Decision Node</option>
+            <option value="ChanceNode">Chance Node</option>
+            <option value="EndNode">End Node</option>
+          </select>
+        )}
+        {isOpen && (
+          <button onClick={addNode} className="p-2 bg-blue-500 text-white rounded">
+            Add Node
+          </button>
+        )}
+        {isOpen && (
+          <button onClick={removeNode} className="p-2 bg-red-500 text-white rounded">
+            Remove Node
+          </button>
+        )}
       </div>
     </div>
   )
