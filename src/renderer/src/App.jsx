@@ -84,6 +84,10 @@ ChanceNode.propTypes = {
 }
 
 function EndNode({ id, onSelect }) {
+  const [outcome, setOutcome] = useState('')
+  const [chance, setChance] = useState('')
+  const [value, setValue] = useState('')
+
   return (
     <div className="child-node end-node flex items-center relative" onClick={() => onSelect(id)}>
       <div className="h-20 w-max flex items-center">
@@ -100,16 +104,22 @@ function EndNode({ id, onSelect }) {
         type="text"
         className={'absolute w-28 border border-black rounded p-1 text-center left-2 top-0'}
         placeholder="Outcome"
+        value={outcome}
+        onChange={(e) => setOutcome(e.target.value)}
       />
       <input
         type="text"
         className={'absolute w-28 border border-black rounded p-1 text-center left-2 bottom-0'}
         placeholder="Chance"
+        value={chance}
+        onChange={(e) => setChance(e.target.value)}
       />
       <input
         type="text"
         className={'absolute w-28 border border-black rounded p-1 text-center right-[-70%]'}
         placeholder="Value"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
       />
     </div>
   )
@@ -144,7 +154,6 @@ function App() {
 
   const handleNodeSelect = (id) => {
     setSelectedNodeId(id)
-    console.log('Not Root Node Selected')
   }
   const addNode = () => {
     if (selectedNodeId === 'root') {
@@ -171,7 +180,8 @@ function App() {
                 id: `${node.id}${node.children.length + 1}`,
                 level: node.level + 1,
                 type: getNodeType(selectedNodeType),
-                children: []
+                children: [],
+                chance: 0 // Ensure chance property is initialized
               }
             ]
           }
@@ -248,6 +258,21 @@ function App() {
   }
 
   const allNodes = flattenNodes(nodes)
+
+  const getExpectedValue = (node) => {
+    if (!node || !node.children || node.children.length === 0 || node.type !== 'ChanceNode') {
+      return 0
+    }
+
+    return node.children.reduce((acc, child) => {
+      if (child.type === 'EndNode') {
+        const value = child.value || 0
+        const chance = (child.chance || 0) * 0.01
+        return acc + value * chance
+      }
+      return acc
+    }, 0)
+  }
 
   const [isOpen, setIsOpen] = useState(true)
 
