@@ -12,7 +12,7 @@ function calculateDynamicHeight(container, level = 1) {
   })
 
   const averageHeight = totalHeight / childCount
-  const finalHeight = totalHeight - averageHeight + (childCount - 1) * 44
+  const finalHeight = totalHeight - averageHeight + (childCount - 1) * 20
   return `${finalHeight}px`
 }
 
@@ -28,11 +28,9 @@ function NodeContainer({ children, level }) {
   }, [children, level])
 
   return (
-    <div
-      ref={containerRef}
-      className="child-node-container flex items-center dynamic-height"
-      style={{ height: 'var(--dynamic-height)' }}>
-      <div className={'grid grid-flow-row grid-cols-1 gap-11 grid-container'}>{children}</div>
+    <div ref={containerRef} className="child-node-container flex items-center dynamic-height">
+      <div className={'absolute left-0'} style={{ height: 'var(--dynamic-height)' }}></div>
+      <div className={'grid grid-flow-row grid-cols-1 gap-5 grid-container'}>{children}</div>
     </div>
   )
 }
